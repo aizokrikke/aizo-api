@@ -13,8 +13,10 @@ require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "objects/menu.ph
 error_reporting(E_ALL);
 
 $menu = new Menu();
-$main = $menu->get();
+$main = $menu->getTree();
 
+
+header("Access-Control-Allow-Origin: *");
 out($main);
 
 ?>

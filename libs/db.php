@@ -46,28 +46,43 @@ class Database {
 
     public function getResource($in) {
         if (is_string($in)) {
-            $this->result = $this->query($in);
+            $out = $this->query($in);
+        } else {
+            $out = $in;
         }
 
+        return $out;
     }
 
-    public function row($in) {
-        $this->getResource($in);
+    public function row($in = NULL) {
+        if (!empty($in)) {
+            $result = $this->getResource($in);
+        } else {
+            $result = $this->result;
+        }
 
-        return $this->result->fetch_row();
+        return $result->fetch_row();
     }
 
 
-    public function assoc($in) {
-        $this->getResource($in);
+    public function assoc($in = NULL) {
+        if (!empty($in)) {
+            $result = $this->getResource($in);
+        } else {
+            $result = $this->result;
+        }
 
-        return $this->result->fetch_assoc();
+        return $result->fetch_assoc();
     }
 
     public function all($in) {
-        $this->getResource($in);
+        if (!empty($in)) {
+            $result = $this->getResource($in);
+        } else {
+            $result = $this->result;
+        }
 
-        return $this->result->fetch_all();
+        return $result->fetch_all();
     }
 
     public function esc($in) {
@@ -78,9 +93,9 @@ class Database {
     public function num_rows($resource = NULL) {
         if (empty($resource)) {
             $out = $this->result->num_rows;
-            echo "num_rows 111111:"; var_dump($this->result);
+
         } else {
-            $out = $resource->num_rows();
+            $out = $resource->num_rows;
         }
 
         return $out;

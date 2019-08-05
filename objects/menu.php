@@ -10,6 +10,7 @@ include_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/db.php";
 
 class Menu {
     private $db;
+    private $menu = [];
 
     public function __construct() {
         $this->db = new Database();
@@ -44,49 +45,20 @@ class Menu {
     }
 
     private function setupoDefault() {
-        $this->db->query("INSERT INTO `menu`
-          (
-            `name`,
-            `display`,
-            `action`,
-            `show`,
-            `active`,
-            `external`,
-            `order`
-           ) VALUES (
-            'home',
-            'Home',
-            '/',
-            'true',
-            'true',
-            'false',
-            1
-           );
-          INSERT INTO `menu`
-          (
-            `name`,
-            `display`,
-            `action`,
-            `show`,
-            `active`,
-            `external`,
-            `order`
-           ) VALUES (
-            'about',
-            'About',
-            '/about',
-            'true',
-            'true',
-            'false',
-            2
-           );
-        "
-        );
+        $this->db->query("
+          INSERT INTO `menu` ( `name`, `display`, `action`, `show`, `active`, `external`, `order`, `parent`) 
+          VALUES 
+            ('home', 'Home', '/', 'true', 'true', 'false', 1, NULL),
+            ('about', 'About', '/about', 'true', 'true', 'false', 2, NULL),
+            ('contact', 'Contact', '/contact', 'true', 'true', 'false', 1, 2),
+            ('route', 'Routebeschrijving', 'route', 'true', 'true', 'false', 1, 3);
+      ");
     }
 
     public function get($parent = -1) {
         if ($parent < 0) {
             $this->db->query("SELECT
+            `id`,
             `name`,
             `display`,
             `action`,
@@ -102,22 +74,46 @@ class Menu {
 
         } ELSE {
             $this->db->query("SELECT
+            `id`,
             `name`,
             `display`,
             `action`,
             `show`,
             `active`,
-            `external`
+            `external`,
+            `order`
             FROM `menu`
             WHERE `parent` = '" . $parent . "'
             ORDER BY `order` ASC;
         ");
 
         }
-       return $this->db->all();
 
-       return $out;
+        $this->menu = $this->db->getResult()
+
+       return $this->menu;
+
     }
+
+    public function getTree($parent = -1) {
+        $menu = [];
+        $result = $this->get($parent);
+
+        WHILE ($line = $this->db->assoc($result)) {
+
+            if (!empty($line)) {
+                $line["submenu"] = $this->getTree($line["id"]);
+            } else {
+                $line["submenu"] = [];
+            }
+            array_push( $menu, $line);
+
+        }
+
+        return $menu;
+    }
+
+
 
 }
 
