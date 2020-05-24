@@ -15,8 +15,6 @@ error_reporting(E_ALL);
 $menu = new Menu();
 $main = $menu->getTree();
 
-
-header("Access-Control-Allow-Origin: *");
 out($main);
 
 ?>

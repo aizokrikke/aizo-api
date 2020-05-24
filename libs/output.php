@@ -13,6 +13,13 @@
  * @param int $status
  */
 function out($body = [], $status = 200) {
+
+    header("Access-Control-Allow-Origin: *");
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400');    // cache for 1 day
+    header('Content-type: application/json');
+
     http_response_code($status);
     echo json_encode($body);
+
 }
