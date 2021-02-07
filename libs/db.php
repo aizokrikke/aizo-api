@@ -2,7 +2,7 @@
 
 include_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "db.config.php";
 
-class Database {
+class database {
 
     private $result;
     private $database;

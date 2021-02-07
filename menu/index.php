@@ -6,15 +6,24 @@
  * Time: 11:28
  */
 
-
 require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/output.php";
 require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "objects/menu.php";
 
 error_reporting(E_ALL);
 
-$menu = new Menu();
-$main = $menu->getTree();
 
-out($main);
+Switch ($_SERVER['REQUEST_METHOD']) {
+    case 'GET':
+        $menu = new Menu();
+        $status = ($main = $menu->getTree());
+        out($main, $status);
+        break;
+    default:
+        out('',401);
+        break;
+}
+
+
+
 
 ?>

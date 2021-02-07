@@ -19,14 +19,14 @@ class Menu {
 
     private function connect() {
         $this->db->query("CREATE TABLE IF NOT EXISTS `menu` (
-            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `id` int(11) NOT NULL AUTO_INCREMENT,                       
             `name` varchar(32) NOT NULL DEFAULT '',
-            `display` varchar(100) NOT NULL DEFAULT '',
-            `parent` int DEFAULT NULL,
+            `display` varchar(100) NOT NULL DEFAULT '', 
+            `parent` int DEFAULT NULL,                 
             `order` int NOT NULL DEFAULT 0,
-            `action` varchar(150) NOT NULL DEFAULT '',
-            `show` enum('true','false') NOT NULL DEFAULT 'true',
-            `active` enum('true', 'false') NOT NULL DEFAULT 'true',
+            `page` varchar(150) NOT NULL DEFAULT '',
+            `content` varchar(150) NOT NULL DEFAULT '',                   
+            `show` enum('true','false') NOT NULL DEFAULT 'true',           
             `external` enum('true', 'false') NOT NULL DEFAULT 'true',
             `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -40,18 +40,18 @@ class Menu {
         $this->db->query("SELECT * FROM `menu`");
         if ($this->db->num_rows()<=0) {
             // empty menu, create default menu
-            $this->setupoDefault();
+            $this->setDefault();
         }
     }
 
-    private function setupoDefault() {
+    private function setDefault() {
         $this->db->query("
-          INSERT INTO `menu` ( `name`, `display`, `action`, `show`, `active`, `external`, `order`, `parent`) 
+          INSERT INTO `menu` ( `name`, `display`, `page`, `content`, `show`, `external`, `order`, `parent`) 
           VALUES 
-            ('home', 'Home', '/', 'true', 'true', 'false', 1, NULL),
-            ('about', 'About', '/about', 'true', 'true', 'false', 2, NULL),
-            ('contact', 'Contact', '/contact', 'true', 'true', 'false', 1, 2),
-            ('route', 'Routebeschrijving', 'route', 'true', 'true', 'false', 1, 3);
+            ('home', 'Home', 'show', 'home', 'true', 'false', 1, NULL),
+            ('about', 'About', 'show', 'about', 'true', 'false', 2, NULL),
+            ('contact', 'Contact', 'show', 'contact', 'true', 'false', 1, 2),
+            ('route', 'Routebeschrijving', 'route', 'route', 'true', 'false', 1, 3);
       ");
     }
 
@@ -61,14 +61,14 @@ class Menu {
             `id`,
             `name`,
             `display`,
-            `action`,
+            `page`,
+            `content`,
             `show`,
-            `active`,
             `external`,
             `order`
             FROM `menu`
             WHERE `parent` IS NULL
-            ORDER BY `order` ASC;
+            ORDER BY `order` DESC;
         ");
 
 
@@ -77,19 +77,19 @@ class Menu {
             `id`,
             `name`,
             `display`,
-            `action`,
+            `page`,
+            `content`,
             `show`,
-            `active`,
             `external`,
             `order`
             FROM `menu`
             WHERE `parent` = '" . $parent . "'
-            ORDER BY `order` ASC;
+            ORDER BY `order` DESC;
         ");
 
         }
 
-        $this->menu = $this->db->getResult()
+        $this->menu = $this->db->getResult();
 
        return $this->menu;
 
