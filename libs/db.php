@@ -31,10 +31,11 @@ class database {
     }
 
     public function query($q) {
+//        echo "<br>".$q."<br>";
         $this->result = $this->database->query($q);
 
         if (!empty($this->database->error)) {
-            die("database error: " . $this->database->error);
+            die("database logError: " . $this->database->error);
         }
 
         return $this->result;
@@ -73,6 +74,7 @@ class database {
         }
 
         return $result->fetch_assoc();
+
     }
 
     public function all($in) {
@@ -105,6 +107,12 @@ class database {
 
         return $this->database->insert_id;
     }
+
+    public function getDbName() {
+        global $name;
+
+        return $name;
+}
 
 }
 

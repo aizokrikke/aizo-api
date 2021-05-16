@@ -2,115 +2,189 @@
 /**
  * Created by IntelliJ IDEA.
  * User: aizokrikke
- * Date: 2019-03-23
+ * Date: 2021-04-05
  * Time: 16:15
  */
 
-include_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/db.php";
+include_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/model.php";
 
 class Menu {
-    private $db;
+    private $model;
     private $menu = [];
+    private $fieldsDef = [
+        '{ 
+            "name": "name",
+            "type": "string",
+            "length": "32",
+            "index": "false",
+            "null": "false",
+            "mandatory": "true",
+            "default": ""
+        }',
+        '{ 
+            "name": "display",
+            "type": "string",
+            "length": "100",
+            "index": "false",
+            "null": "false",
+            "mandatory": "true",
+            "default": ""
+        }',
+        '{ 
+            "name": "parent",
+            "type": "integer",
+            "length": "11",
+            "index": "true",
+            "null": "true",
+            "mandatory": "false",
+            "default": "0"
+        }',
+        '{ 
+            "name": "order",
+            "type": "integer",
+            "length": "11",
+            "index": "true",
+            "null": "false",
+            "mandatory": "false",
+            "default": "0"
+        }',
+        '{ 
+            "name": "action",
+            "type": "string",
+            "length": "150",
+            "index": "false",
+            "null": "false",
+            "mandatory": "false",
+            "default": ""
+        }',
+        '{ 
+            "name": "content",
+            "type": "string",
+            "length": "150",
+            "index": "false",
+            "null": "false",
+            "mandatory": "false",
+            "default": ""
+        }',
+        '{ 
+            "name": "show",
+            "type": "enum",
+            "options": ["true", "false"],
+            "index": "false",
+            "null": "false",
+            "mandatory": "false",
+            "default": "true"
+        }',
+        '{ 
+            "name": "external",
+            "type": "enum",
+            "options": ["true", "false"],
+            "index": "false",
+            "null": "false",
+            "mandatory": "false",
+            "default": "false"
+        }'
+        ];
 
     public function __construct() {
-        $this->db = new Database();
-        $this->connect();
-    }
-
-    private function connect() {
-        $this->db->query("CREATE TABLE IF NOT EXISTS `menu` (
-            `id` int(11) NOT NULL AUTO_INCREMENT,                       
-            `name` varchar(32) NOT NULL DEFAULT '',
-            `display` varchar(100) NOT NULL DEFAULT '', 
-            `parent` int DEFAULT NULL,                 
-            `order` int NOT NULL DEFAULT 0,
-            `page` varchar(150) NOT NULL DEFAULT '',
-            `content` varchar(150) NOT NULL DEFAULT '',                   
-            `show` enum('true','false') NOT NULL DEFAULT 'true',           
-            `external` enum('true', 'false') NOT NULL DEFAULT 'true',
-            `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`),
-            INDEX `order` (`order`),
-            INDEX `parent` (`parent`)
-            )
-            ENGINE=InnoDB  DEFAULT CHARSET=latin1;
-        ");
-
-        $this->db->query("SELECT * FROM `menu`");
-        if ($this->db->num_rows()<=0) {
-            // empty menu, create default menu
-            $this->setDefault();
-        }
-    }
-
-    private function setDefault() {
-        $this->db->query("
-          INSERT INTO `menu` ( `name`, `display`, `page`, `content`, `show`, `external`, `order`, `parent`) 
-          VALUES 
-            ('home', 'Home', 'show', 'home', 'true', 'false', 1, NULL),
-            ('about', 'About', 'show', 'about', 'true', 'false', 2, NULL),
-            ('contact', 'Contact', 'show', 'contact', 'true', 'false', 1, 2),
-            ('route', 'Routebeschrijving', 'route', 'route', 'true', 'false', 1, 3);
-      ");
+        $this->model = new model('menu', $this->fieldsDef);
     }
 
     public function get($parent = -1) {
-        if ($parent < 0) {
-            $this->db->query("SELECT
-            `id`,
-            `name`,
-            `display`,
-            `page`,
-            `content`,
-            `show`,
-            `external`,
-            `order`
-            FROM `menu`
-            WHERE `parent` IS NULL
-            ORDER BY `order` DESC;
-        ");
-
-
-        } ELSE {
-            $this->db->query("SELECT
-            `id`,
-            `name`,
-            `display`,
-            `page`,
-            `content`,
-            `show`,
-            `external`,
-            `order`
-            FROM `menu`
-            WHERE `parent` = '" . $parent . "'
-            ORDER BY `order` DESC;
-        ");
-
+        if ($parent <= 0) {
+            $condition = "parent < 1";
+        } else {
+            $condition = "parent = '" . $parent . "'";
         }
+        $order = "`order` ASC";
 
-        $this->menu = $this->db->getResult();
+        $this->menu = $this->model->get('*', $condition, $order);
 
-       return $this->menu;
-
+        return $this->menu;
     }
 
     public function getTree($parent = -1) {
         $menu = [];
         $result = $this->get($parent);
 
-        WHILE ($line = $this->db->assoc($result)) {
-
+        WHILE ($line = $this->model->assoc($result)) {
             if (!empty($line)) {
                 $line["submenu"] = $this->getTree($line["id"]);
             } else {
                 $line["submenu"] = [];
             }
             array_push( $menu, $line);
-
         }
 
         return $menu;
+    }
+
+    public function add($name, $display = '', $parent = 0, $order = 0, $action = 'show', $content = '',
+        $show = true, $external = false) {
+
+        if (!empty($name)) {
+            if (empty($display)) {
+                $display = $name;
+            }
+            if (empty($content)) {
+                $content = $name;
+            }
+            if (empty($order)) {
+                $order = 0;
+            }
+            if (empty($show)) {
+                $show = 'true';
+            }
+            if (empty($external)) {
+                $external = 'false';
+            }
+            return $this->model->insert(['name','display','parent','order','action', 'content', 'show','external'],
+                [[$name, $display, $parent, $order, $action, $content, $show, $external]]);
+        } else {
+            return false;
+        }
+    }
+
+    public function update($id, $name, $display = '', $parent = 0, $order = 0, $action = 'show', $content = '',
+                        $show = true, $external = false) {
+
+        if (!empty($name) && !empty($id)) {
+            if (empty($display)) {
+                $display = $name;
+            }
+            if (empty($content)) {
+                $content = $name;
+            }
+            if (empty($order)) {
+                $order = 0;
+            }
+            if (empty($show)) {
+                $show = 'true';
+            }
+            if (empty($external)) {
+                $external = 'false';
+            }
+            return $this->model->update(['name','display','parent','order','action', 'content', 'show','external'],
+                [$name, $display, $parent, $order, $action, $content, $show, $external],
+                "`id` = '". $id ."'");
+        } else {
+            return false;
+        }
+    }
+
+    public function updateOrAdd($name, $display = '', $parent = 0, $order = 0, $action = 'show', $content = '',
+        $show = true, $external = false) {
+        if (!empty($name)) {
+            $result = $this->model->get(['id'],"`name` = '". $name . "'");
+            $row = $this->model->assoc($result);
+            if (!empty($row['id'])) {
+                return $this->update($row['id'], $name, $display, $parent, $order, $action, $content, $show, $external);
+            } else {
+                return $this->add($name, $display, $parent, $order, $action, $content, $show, $external);
+            }
+        } else {
+            return false;
+      }
     }
 
 

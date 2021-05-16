@@ -7,21 +7,27 @@
  */
 
 require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/output.php";
-require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "objects/menu.php";
+require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "objects/pages.php";
 
-error_reporting(E_ALL);
+error_reporting(E_ERROR);
 
+// get page id
 
 Switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
-        $menu = new Menu();
-        $status = ($main = $menu->getTree());
+        // if page id set return meta data of page
+
+        // else show list of available pages
+
         out($main, $status);
+
         break;
     default:
-        out('',401);
+        out('Forbidden',403);
         break;
 }
+
+
 
 
 
