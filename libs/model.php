@@ -17,8 +17,10 @@ class model
     private string $description = '';
     private string $definition = '';
     private string $dbPrefix = 'mod_';
+    private array $defaultRecords = [];
+    private bool $new = false;
 
-    public function __construct($model = '', $fieldDefinition = []) {
+    public function __construct($model = '', $fieldDefinition = [], $defaultRecords = []) {
 
         if (!empty($model)) {
             if (!empty($fieldDefinition)) {
@@ -27,6 +29,7 @@ class model
                 $this->setTableName();
                 $this->fielddefinition = $fieldDefinition;
                 $this->createTableDefinition();
+                $this->defaultRecords = $defaultRecords;
                 $this->checkModelHealth();
 
             } else {
@@ -61,7 +64,7 @@ class model
                  if ($field['null']<>'true') {
                      $this->tabledefinition .= " NOT NULL";
                  }
-                 if (!empty($field['default'])) {
+                 if (array_key_exists('default', $field)) {
                      $this->tabledefinition .= " DEFAULT '" . $field['default'] . "'";
                  }
              break;
@@ -128,59 +131,67 @@ class model
 ;
     }
 
-    public function validateInput($in, $all = false) {
-        
+    public function validateInput($in, $project = 0, $strict = false) {
         $fields = [];
         $mandatory = [];
         $errors = [];
         $unique = [];
+        $projectUnique = [];
 
         // make validation arrays
         foreach($this->fielddefinition as $field => $json) {
             $definition = json_decode($json, true);
             $mandatory[$definition['name']] = $definition['mandatory'];
             $unique[$definition['name']] = $definition['unique'];
+            $projectUnique[$definition['name']] = $definition['projectunique'];
             $fields[$definition['name']] = $definition;
         }
 
         // process input
         foreach ($in as $key => $value) {
             $fieldtype = $fields[$key]['type'];
-            if (empty($fieldtype)) {
-                // field is not in model definition
-                $errors[] = "unknown field " . $key;
-            }
+                if (empty($fieldtype)) {
+                    // field is not in model definition
+                    if ($strict) {
+                        $errors[] = "unknown field " . $key;
+                    }
+                    $fieldtype = 'string';
+                }
             if (!$this->validate($value, $fieldtype)) {
                 // field type incorrect
-                $errors[] =  'field ' . $key . ' is not valid';
+                $errors[] =  'field ' . $key . ' is not valid (' . $fieldtype . ")";
             }
-            if ($unique[$key] == "true") {
-                if (!$this->unique($key, $value)) {
-                    $errors[] =  'field ' . $key . ' is not unique (mandatory)'; 
-                }
+            if ($unique[$key] == "true" && !$this->unique($key, $value)) {
+                $errors[] =  'field ' . $key . ' is not global unique (mandatory)';
+            }
+            if (($projectUnique[$key] == "true") && !$this->unique($key, $value, $project)) {
+                $errors[] =  'field ' . $key . ' is not unique (mandatory)';
             }
             $mandatory[$key] = "present";
         }
-
         // are all the required fields in place?
         foreach ($mandatory as $key => $value) {
             if ($value == "true") {
                 $errors[] = "field " . $key . " is missing (mandatory)";
             }
         }
-        if (empty($errors)) {
+
+        if (count($errors) == 0) {
             return true;
         } else {
             return $errors;
         }
     }
 
-    private function unique($field, $value): bool
-    {
-        $condition = $field . " = '". $value . "'";
-        $result = $this->getOne(['id'], $condition);
+    private function unique($field, $value, $project = 0): bool {
+        $condition = "`" . $field . "` = '". $value . "'";
+        if (!empty($project)) {
+            $condition .= " && `project` = '" . $project . "'";
+        }
 
-        return empty($result);
+        $result = $this->getOne(['id'], $condition);
+        $unique = empty($result);
+        return $unique;
     }
     
     private function validate($value, $type) {
@@ -192,7 +203,7 @@ class model
                 $valid = true;
                 break;
             case 'integer':
-                $valid = ctype_digit($value);
+                $valid = (!is_string($value) && is_int($value)) || (is_string($value) && ctype_digit($value));
                 break;
             case 'enum':
                 // to do
@@ -279,14 +290,14 @@ class model
         return $results;
     }
 
-    public function list($condition = '', $fields = array('id'), $order = '', $start = -1, $end = -1): array {
+    public function list($condition = '', $fields = array('id'), $order = '', $start = -1, $end = -1, $verbose = false): array {
 
         $limit = '';
         if ($start >= 0 && $end >= 0 && $end > $start) {
             $delta = $end - $start;
             $limit = "$start , $delta";
         }
-        $result = $this->get($fields, $condition, $order, $limit);
+        $result = $this->get($fields, $condition, $order, $limit, $verbose);
         $out = array();
         while ($row = $this->assoc($result)) {
             $out[] = $row;
@@ -325,6 +336,10 @@ class model
         return $this->db->query($in);
     }
 
+    public function isNew() {
+        return $this->new;
+    }
+
     public function setDescription() {
         //update the decription in the class and db
     }
@@ -353,9 +368,8 @@ class model
                     // database velden aanpassen en/of toevoegen
                       foreach($newParts as $newLine) {
                         $name = $this->getLineFieldName($newLine);
-                        echo $name . " ";
                         if (!empty($name)) {
-                            if (preg_match($name, $currentModel['definition'])) {
+                            if (preg_match("/" . $name . "[\s]*/", $currentModel['definition'])) {
                                 $this->updateField($newLine);
                             } else {
                                 $this->addField($newLine);
@@ -364,10 +378,11 @@ class model
                     }
                     // velden verwijderen indien nodig
                     $oldParts = $this->getDefinitionLines($currentModel['definition']);
+                    $this->definition = $this->db->esc($this->tabledefinition);
                     foreach($oldParts as $oldLine) {
                         $name = $this->getLineFieldName($oldLine);
                         if (!empty($name)) {
-                            if (!preg_match($name, $this->definition)) {
+                            if (!preg_match("/" . $name . "[\s]*/", $this->definition)) {
                                 // veld is removed
                                 $this->removeField($name);
                             }
@@ -375,7 +390,6 @@ class model
                     }
 
                     // update model in lijst in database
-                    $this->definition = $this->db->esc($this->tabledefinition);
                     $q = "UPDATE `models` set `definition` = '$this->definition' where `name`='$this->name'";
                     $this->db->query($q);
                 }
@@ -400,7 +414,6 @@ class model
         while ($field = $this->db->row($result)) {
             $fields[] = $field[0];
         };
-        print_r($fields);
 
     }
 
@@ -442,9 +455,22 @@ class model
             $q = "INSERT INTO `models` (`name`, `description`, `table`, `definition`) 
                     VALUES ('$this->name', '$this->description', '$this->table', '$definition')";
             $this->db->query($q);
+            $this->defaultFill();
+            $this->new = true;
         }
     }
 
+    private function defaultFill() {
+        if (!empty($this->defaultRecords)) {
+            $fields = [];
+            $values = [];
+            foreach ($this->defaultRecords as $field => $value) {
+                $fields[] = $field;
+                $values[] = $value;
+            }
+            $this->insert($fields, [$values]);
+        }
+    }
 
 
     private function getDefinitionLines($parts) {

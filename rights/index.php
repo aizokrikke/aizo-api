@@ -8,7 +8,7 @@
 
 require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/output.php";
 require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "objects/right.php";
-require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/headers.php";
+require_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/api.php";
 error_reporting(E_ERROR);
 
 $body = parseHeaders(true);

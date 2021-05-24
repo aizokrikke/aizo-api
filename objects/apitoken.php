@@ -22,18 +22,23 @@ class apiToken {
             "mandatory": "true"
         }'
         ];
+    private array $defaultRecords = [ "client" => 1, "token" => "start"];
     private string $token = '';
-    private string $client = '';
+    private int $client = 0;
 
     public function __construct($token = '', $duration = 0)
     {
-        $this->model = new model('apitoken', $this->fieldsDef);
+        $this->model = new model('apitoken', $this->fieldsDef, $this->defaultRecords);
         $this->token = $token;
         $this->verify();
     }
 
     public function setClient($client) {
         $this->client = $client;
+    }
+
+    public function getClient() {
+        return $this->client;
     }
 
     public function generate() {
@@ -58,6 +63,4 @@ class apiToken {
 
         return $allowed;
     }
-
-
 }

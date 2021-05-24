@@ -139,8 +139,7 @@ class Session {
 
     public function verifySession() {
         $condition = "`token` = '$this->token' && `validuntill` > '" . $this->time . "'";
-        $result = $this->model->get(['id', 'token', 'user'], $condition);
-        $session = $this->model->assoc($result);
+        $session = $this->model->getOne(['id', 'token', 'user'], $condition);
         if (!empty($session['token'])) {
             $this->token = $session['token'];
             $this->setUser($session['user']);

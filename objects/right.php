@@ -4,12 +4,6 @@ include_once dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . "libs/json.php";
 
 class Right {
     private $model;
-    private $tableDefinition = "                      
-        `name` varchar(150) NOT NULL DEFAULT '', 
-        `description` text DEFAULT '',               
-        INDEX `name` (`name`)
-    ";
-
     private array $fieldsDef = [
         '{ 
             "name": "name",
