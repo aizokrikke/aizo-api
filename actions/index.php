@@ -62,6 +62,7 @@ class indexPage {
                 ];
 
             } else {
+                $this->status = 203;
                 $this->body = ['errorcode' => 2, 'message' => 'user not found'];
             }
         }

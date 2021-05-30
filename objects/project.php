@@ -42,15 +42,25 @@ class Project
     private string $key = '';
 
 
-    public function __construct($duration = 0)
+    public function __construct($id)
     {
+        $this->id = $id;
         $this->model = new model('project', $this->fieldsDef, $this->defaultRecords);
     }
 
-    public function list()
+    public function list($filter)
     {
+        if (!empty($this->id)) {
+            $condition = "`id` = " . $this->id;
+        } else {
+            $condition = '`id` > 1';
+        }
         $list = array();
-        $result = $this->model->get(['id', 'name', 'description', 'key']);
+        if (!empty($filter)) {
+            $condition .= " AND `name` LIKE '%" . $filter . "%' || `key` LIKE '%" . $filter
+            . "%'";
+        }
+        $result = $this->model->get(['id', 'name', 'description', 'key'], $condition);
         while ($row = $this->model->assoc($result)) {
             $list[] = $row;
         }

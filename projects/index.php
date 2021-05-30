@@ -51,7 +51,7 @@ class indexPage {
 
     private function handleGetRequest() {
         $project = new project($this->api->getRequestParam('id'));
-        $this->body = $project->list();
+        $this->body = $project->list($this->api->getRequestParam('filter'));
         $this->status = 200;
     }
 
