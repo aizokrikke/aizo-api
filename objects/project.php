@@ -68,7 +68,8 @@ class Project
     }
 
     public function store($input, $all = true) {
-
+        echo "store! ";
+print_r($input);
         $result = $this->model->validateInput($input);
         if (!is_array($result)) {
             $fields = [];

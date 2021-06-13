@@ -25,9 +25,9 @@ class api {
     {
         $this->name = $name;
         $this->logbody = $logbody;
+        $this->getCallDetails();
         $this->parseHeaders();
         $this->parseRequestBody();
-        $this->getCallDetails();
         $this->collectRequestParams();
         if ($sessionverify) {
             $this->verifySession();
@@ -42,7 +42,22 @@ class api {
 
 
     private function parseRequestBody(): void {
-        $this->requestBody = file_get_contents('php://input');
+        switch ($this->method()) {
+            case 'PUT':
+                echo "open input ";
+                $putfp = fopen('php://input', 'r');
+                $putdata = '';
+                while($data = fread($putfp, 1024))
+                    $putdata .= $data;
+                fclose($putfp);
+                $this->requestBody = $putdata;
+                break;
+            default:
+                $this->requestBody = file_get_contents('php://input');
+                break;
+        }
+        echo $this->requestBody;
+        echo 'now JSON process ';
         if (!empty($this->requestBody)) {
             $this->bodyParams = json_decode($this->requestBody, true);
         }

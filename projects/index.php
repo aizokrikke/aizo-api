@@ -57,9 +57,29 @@ class indexPage {
 
     private function handlePostRequest() {
         // voeg een nieuw project toe
+        $this->store();
+    }
+
+    private function handlePatchRequest() {
+        $this->status = 403;
+        $this->body = ['errorcode' => 1, 'messages' => ['method not allowed']];
+    }
+
+    private function handlePutRequest() {
+        $this->store($this->api->getRequestParam('id'));
+    }
+
+    private function handleDeleteRequest() {
+        $this->status = 403;
+        $this->body = ['errorcode' => 1, 'messages' => ['method not allowed']];
+    }
+
+    private function store($id = '') {
         $body = $this->api->getBodyParams();
+        print_r($body);
+        echo "processing... ";
         if (!empty($body)) {
-            $project = new project();
+            $project = new project($id);
             $out = $project->store($body);
             if (is_array($out)) {
                 $this->body = ['errorcode' => 100, 'messages' => $out];
@@ -77,22 +97,6 @@ class indexPage {
             $this->status = 400;
             $this->body = ['errorcode' => 1, 'messages' => ['invalid input']];
         }
-
-    }
-
-    private function handlePatchRequest() {
-        $this->status = 403;
-        $this->body = ['errorcode' => 1, 'messages' => ['method not allowed']];
-    }
-
-    private function handlePutRequest() {
-        $this->status = 403;
-        $this->body = ['errorcode' => 1, 'messages' => ['method not allowed']];
-    }
-
-    private function handleDeleteRequest() {
-        $this->status = 403;
-        $this->body = ['errorcode' => 1, 'messages' => ['method not allowed']];
     }
 }
 
